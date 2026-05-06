@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <title>自律健身計劃 — 含熱量對照表</title>
+  <title>自律健身計劃 — 自訂活動與 kcal 估算</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -13,7 +13,7 @@
     h2 { margin:0 0 12px 0; color:#34495e; }
     form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px; }
     label { font-size:14px; }
-    input[type="date"], input[type="number"], select { padding:6px 8px; border:1px solid #ddd; border-radius:6px; }
+    input[type="date"], input[type="number"], input[type="text"], select { padding:6px 8px; border:1px solid #ddd; border-radius:6px; }
     .button { background:#3498db; color:#fff; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; }
     .button:hover { background:#2980b9; }
     table { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
@@ -28,17 +28,17 @@
     @media (max-width:900px){ .grid{ grid-template-columns: 1fr; } }
     .small { font-size:13px; color:#555; }
     .table-inline td, .table-inline th { white-space:nowrap; }
+    .muted { color:#888; font-size:13px; }
   </style>
 </head>
 <body>
   <header>
     <h1>自律健身計劃</h1>
-    <div>目標：減脂 + 腹肌 — 本地儲存（localStorage）與月度總結</div>
+    <div>加入自訂活動與 kcal 估算，支援儲存為預設活動</div>
   </header>
 
   <div class="container">
 
-    <!-- 每週計劃 -->
     <div class="card">
       <h2>每週 5 天計劃</h2>
       <ul>
@@ -52,43 +52,51 @@
 
     <div class="grid">
 
-      <!-- 運動數據 -->
       <div class="card">
-        <h2>運動數據記錄</h2>
+        <h2>運動數據記錄（含自訂活動）</h2>
+
         <form id="exerciseForm">
           <label>日期: <input type="date" id="exDate" required></label>
-          <label>活動: 
-            <select id="exActivity">
-              <option value="跑步">跑步</option>
-              <option value="快走">快走</option>
-              <option value="騎車">騎車</option>
-              <option value="HIIT">HIIT</option>
-              <option value="重量訓練">重量訓練</option>
-              <option value="RingFit">Ring Fit</option>
-              <option value="瑜伽">瑜伽</option>
-            </select>
+
+          <label>活動預設:
+            <select id="exActivitySelect"></select>
           </label>
+
+          <label>或自訂名稱: <input type="text" id="customActivityName" placeholder="例如：跳繩"></label>
+
+          <label>自訂 MET: <input type="number" id="customMET" step="0.1" min="0" placeholder="選填"></label>
+
           <label>時間(分鐘): <input type="number" id="exTime" min="0" required></label>
+
           <label>組數: <input type="number" id="exSets" min="0" value="0"></label>
+
           <label>體重(kg): <input type="number" id="userWeight" min="1" step="0.1" placeholder="選填，用於 kcal 估算"></label>
+
+          <button type="button" class="button" id="estimateBtn">估算 kcal</button>
+          <div id="estimateDisplay" class="muted" style="align-self:center;">估算：— kcal</div>
+
           <button type="submit" class="button">新增運動</button>
         </form>
+
+        <div style="display:flex;gap:8px;margin-top:6px;align-items:center;">
+          <button class="button" id="saveCustomAsPreset">將自訂活動儲為預設</button>
+          <div class="small">可把常用自訂活動加入預設清單</div>
+        </div>
 
         <table id="exerciseTable" aria-label="運動紀錄表">
           <thead><tr><th>日期</th><th>活動</th><th>時間(分)</th><th>組數</th><th>估算消耗(kcal)</th><th>操作</th></tr></thead>
           <tbody></tbody>
         </table>
-        <div class="note">若未填體重，系統以 70 kg 為預設值估算運動消耗。</div>
+        <div class="note">若未填體重，系統以 70 kg 為預設值估算消耗。</div>
       </div>
 
-      <!-- 飲食紀錄 -->
       <div class="card">
         <h2>飲食紀錄</h2>
         <form id="dietForm">
           <label>日期: <input type="date" id="dietDate" required></label>
-          <label>餐名: <input type="text" id="dietName" placeholder="早餐/午餐/晚餐/點心" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></label>
+          <label>餐名: <input type="text" id="dietName" placeholder="早餐/午餐/晚餐/點心"></label>
           <label>攝入(kcal): <input type="number" id="dietIn" min="0" required></label>
-          <label>備註: <input type="text" id="dietNote" placeholder="選填" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></label>
+          <label>備註: <input type="text" id="dietNote" placeholder="選填"></label>
           <button type="submit" class="button">新增飲食</button>
         </form>
 
@@ -96,12 +104,11 @@
           <thead><tr><th>日期</th><th>餐名</th><th>攝入(kcal)</th><th>狀態</th><th>操作</th></tr></thead>
           <tbody></tbody>
         </table>
-        <div class="note">狀態以「赤字/盈餘」顯示，需先設定每日目標攝入（下方控制項）。</div>
+        <div class="note">在「每日目標攝入」設定後，飲食表會顯示當日是否超過目標。</div>
       </div>
 
     </div>
 
-    <!-- 控制與月度 -->
     <div class="card">
       <h2>控制與月度總結</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -116,39 +123,23 @@
       <div id="summaryNote" class="note"></div>
     </div>
 
-    <!-- 攝入/消耗熱量對照表 -->
     <div class="card">
-      <h2>攝入 / 消耗熱量對照表（快速估算）</h2>
-      <div class="small">下表列出常見活動的 <strong>MET</strong> 值與每分鐘 kcal 估算（以體重 70 kg 為範例）。若要估算你自己的每分鐘 kcal，請輸入體重並使用右側計算器。</div>
+      <h2>攝入 / 消耗熱量對照表與估算器</h2>
+      <div class="small">表列常見活動 MET 與 70 kg 範例每分鐘 kcal。可輸入體重與時間估算個人消耗。</div>
 
       <table class="table-inline" style="margin-top:12px;">
         <thead>
           <tr><th>活動</th><th>典型 MET</th><th>每分鐘 kcal（70 kg 範例）</th></tr>
         </thead>
-        <tbody>
-          <tr><td>跑步（8 km/h）</td><td>8.3</td><td>約 9.7 kcal/min</td></tr>
-          <tr><td>快走（5.5 km/h）</td><td>4.3</td><td>約 5.0 kcal/min</td></tr>
-          <tr><td>騎車（中等）</td><td>7.5</td><td>約 8.6 kcal/min</td></tr>
-          <tr><td>HIIT（高強度）</td><td>10</td><td>約 11.7 kcal/min</td></tr>
-          <tr><td>重量訓練（中等）</td><td>6</td><td>約 7.0 kcal/min</td></tr>
-          <tr><td>Ring Fit（中高強度）</td><td>7</td><td>約 8.2 kcal/min</td></tr>
-          <tr><td>瑜伽（溫和）</td><td>2.5</td><td>約 2.9 kcal/min</td></tr>
-          <tr><td>快走家務</td><td>3.5</td><td>約 4.1 kcal/min</td></tr>
+        <tbody id="metTableBody">
+          <!-- 由 JS 填入 -->
         </tbody>
       </table>
 
       <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <label>你的體重(kg): <input type="number" id="calcWeight" min="1" step="0.1" value="70" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></label>
         <label>選擇活動:
-          <select id="calcActivity" style="padding:6px;border:1px solid #ddd;border-radius:6px;">
-            <option value="8.3">跑步（8 km/h） - MET 8.3</option>
-            <option value="4.3">快走（5.5 km/h） - MET 4.3</option>
-            <option value="7.5">騎車（中等） - MET 7.5</option>
-            <option value="10">HIIT（高強度） - MET 10</option>
-            <option value="6">重量訓練（中等） - MET 6</option>
-            <option value="7">Ring Fit（中高強度） - MET 7</option>
-            <option value="2.5">瑜伽（溫和） - MET 2.5</option>
-          </select>
+          <select id="calcActivity" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></select>
         </label>
         <label>時間(分鐘): <input type="number" id="calcMinutes" min="1" value="30" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></label>
         <button class="button" id="calcBtn">估算消耗</button>
@@ -160,22 +151,34 @@
 
   <script>
     // ---------- 常數與初始資料 ----------
-    const DEFAULT_WEIGHT = 70; // kg
+    const DEFAULT_WEIGHT = 70;
     const STORAGE = {
-      exercise: "exerciseData_v1",
-      diet: "dietData_v1"
+      exercise: "exerciseData_v2",
+      diet: "dietData_v2",
+      presets: "activityPresets_v1"
     };
+
+    // 內建活動與 MET
+    const DEFAULT_PRESETS = [
+      { name: "跑步（8 km/h）", met: 8.3 },
+      { name: "快走（5.5 km/h）", met: 4.3 },
+      { name: "騎車（中等）", met: 7.5 },
+      { name: "HIIT（高強度）", met: 10 },
+      { name: "重量訓練（中等）", met: 6 },
+      { name: "Ring Fit", met: 7 },
+      { name: "瑜伽（溫和）", met: 2.5 },
+      { name: "跳繩", met: 12 }
+    ];
 
     let exerciseData = JSON.parse(localStorage.getItem(STORAGE.exercise)) || [];
     let dietData = JSON.parse(localStorage.getItem(STORAGE.diet)) || [];
+    let activityPresets = JSON.parse(localStorage.getItem(STORAGE.presets)) || DEFAULT_PRESETS.slice();
     let chart = null;
 
-    // MET to kcal per minute: kcal/min = MET * weight(kg) * 1/60
+    // ---------- 工具函式 ----------
     function kcalPerMinuteFromMET(met, weightKg) {
       return (met * (weightKg || DEFAULT_WEIGHT)) / 60;
     }
-
-    // Normalize date to YYYY-MM-DD
     function normalizeDate(d) {
       if (!d) return "";
       const dt = new Date(d);
@@ -183,7 +186,38 @@
       return dt.toISOString().slice(0,10);
     }
 
-    // ---------- 渲染表格 ----------
+    // ---------- 預設活動與選單渲染 ----------
+    function populateActivitySelects() {
+      const sel = document.getElementById("exActivitySelect");
+      const calcSel = document.getElementById("calcActivity");
+      sel.innerHTML = "";
+      calcSel.innerHTML = "";
+      activityPresets.forEach((p, idx) => {
+        const opt = document.createElement("option");
+        opt.value = idx;
+        opt.textContent = `${p.name} (MET ${p.met})`;
+        sel.appendChild(opt);
+
+        const opt2 = document.createElement("option");
+        opt2.value = idx;
+        opt2.textContent = `${p.name} (MET ${p.met})`;
+        calcSel.appendChild(opt2);
+      });
+    }
+
+    // MET 表格渲染
+    function renderMetTable() {
+      const tbody = document.getElementById("metTableBody");
+      tbody.innerHTML = "";
+      activityPresets.forEach(p => {
+        const kcalMin70 = (p.met * 70 / 60);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${p.name}</td><td>${p.met}</td><td>約 ${kcalMin70.toFixed(1)} kcal/min</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ---------- 表格渲染 ----------
     function renderExerciseTable() {
       const tbody = document.querySelector("#exerciseTable tbody");
       tbody.innerHTML = "";
@@ -193,7 +227,7 @@
                         <td>${r.activity}</td>
                         <td>${r.time}</td>
                         <td>${r.sets || 0}</td>
-                        <td>${r.kcal.toFixed(0)}</td>
+                        <td>${Math.round(r.kcal)}</td>
                         <td><button class="delete-btn" data-type="exercise" data-index="${idx}">刪除</button></td>`;
         tbody.appendChild(tr);
       });
@@ -203,7 +237,6 @@
       const tbody = document.querySelector("#dietTable tbody");
       tbody.innerHTML = "";
       const dailyTarget = Number(document.getElementById("dailyTarget").value) || null;
-      // compute daily totals for status
       const totals = {};
       dietData.forEach(d => {
         const nd = normalizeDate(d.date);
@@ -226,38 +259,82 @@
     function saveLocal() {
       localStorage.setItem(STORAGE.exercise, JSON.stringify(exerciseData));
       localStorage.setItem(STORAGE.diet, JSON.stringify(dietData));
+      localStorage.setItem(STORAGE.presets, JSON.stringify(activityPresets));
     }
 
-    // ---------- 表單事件 ----------
+    // ---------- 表單事件與估算 ----------
+    document.getElementById("estimateBtn").addEventListener("click", function(){
+      const activityIndex = document.getElementById("exActivitySelect").value;
+      const customName = document.getElementById("customActivityName").value.trim();
+      const customMET = Number(document.getElementById("customMET").value) || null;
+      const time = Number(document.getElementById("exTime").value) || 0;
+      const weight = Number(document.getElementById("userWeight").value) || DEFAULT_WEIGHT;
+
+      let met = null;
+      let activityName = "";
+
+      if (customName) {
+        activityName = customName;
+        met = customMET || null;
+      } else {
+        const preset = activityPresets[activityIndex];
+        activityName = preset ? preset.name : "自訂活動";
+        met = preset ? preset.met : null;
+      }
+
+      if (!met) {
+        document.getElementById("estimateDisplay").textContent = "請提供 MET 或選擇預設活動以估算 kcal";
+        return;
+      }
+      const kcalPerMin = kcalPerMinuteFromMET(met, weight);
+      const total = kcalPerMin * time;
+      document.getElementById("estimateDisplay").textContent = `估算：${Math.round(total)} kcal（${kcalPerMin.toFixed(2)} kcal/min）`;
+    });
+
     document.getElementById("exerciseForm").addEventListener("submit", function(e){
       e.preventDefault();
       const date = document.getElementById("exDate").value;
-      const activity = document.getElementById("exActivity").value;
+      const activityIndex = document.getElementById("exActivitySelect").value;
+      const customName = document.getElementById("customActivityName").value.trim();
+      const customMET = Number(document.getElementById("customMET").value) || null;
       const time = Number(document.getElementById("exTime").value) || 0;
       const sets = Number(document.getElementById("exSets").value) || 0;
       const weight = Number(document.getElementById("userWeight").value) || DEFAULT_WEIGHT;
 
-      // MET 估值（簡化對應）
-      const MET_MAP = {
-        "跑步": 8.3,
-        "快走": 4.3,
-        "騎車": 7.5,
-        "HIIT": 10,
-        "重量訓練": 6,
-        "RingFit": 7,
-        "瑜伽": 2.5
-      };
-      const met = MET_MAP[activity] || 6;
-      const kcalPerMin = kcalPerMinuteFromMET(met, weight);
-      const kcal = kcalPerMin * time;
+      let met = null;
+      let activityName = "";
 
-      exerciseData.push({ date: normalizeDate(date), activity, time, sets, kcal });
+      if (customName) {
+        activityName = customName;
+        met = customMET || null;
+      } else {
+        const preset = activityPresets[activityIndex];
+        activityName = preset ? preset.name : "自訂活動";
+        met = preset ? preset.met : null;
+      }
+
+      if (!met) {
+        if (!confirm("未提供 MET，無法估算 kcal，仍要新增紀錄嗎？")) return;
+      }
+
+      const kcal = met ? (kcalPerMinuteFromMET(met, weight) * time) : 0;
+      exerciseData.push({ date: normalizeDate(date), activity: activityName, time, sets, kcal });
       saveLocal();
       renderExerciseTable();
       updateChart();
       this.reset();
-      // keep weight field if user entered
-      if (weight !== DEFAULT_WEIGHT) document.getElementById("userWeight").value = weight;
+      document.getElementById("estimateDisplay").textContent = "估算：— kcal";
+    });
+
+    document.getElementById("saveCustomAsPreset").addEventListener("click", function(){
+      const name = document.getElementById("customActivityName").value.trim();
+      const met = Number(document.getElementById("customMET").value) || null;
+      if (!name || !met) return alert("請輸入自訂活動名稱與 MET 值，才能儲存為預設。");
+      activityPresets.push({ name, met });
+      saveLocal();
+      populateActivitySelects();
+      renderMetTable();
+      alert("已將自訂活動儲為預設。");
     });
 
     document.getElementById("dietForm").addEventListener("submit", function(e){
@@ -292,7 +369,7 @@
       updateChart();
     });
 
-    // ---------- 月度儲存 / 載入 / 匯出 ----------
+    // ---------- 月度儲存 / 載入 / 匯出 / 清除 ----------
     document.getElementById("saveMonthBtn").addEventListener("click", function(){
       const now = new Date();
       const key = `fitness_${now.getFullYear()}_${now.getMonth()+1}`;
@@ -303,7 +380,7 @@
 
     document.getElementById("loadLastBtn").addEventListener("click", function(){
       const now = new Date();
-      let lastMonth = now.getMonth(); // 0..11
+      let lastMonth = now.getMonth();
       let year = now.getFullYear();
       if (lastMonth === 0) { lastMonth = 12; year = year - 1; }
       const key = `fitness_${year}_${lastMonth}`;
@@ -311,7 +388,6 @@
       if (!raw) { alert("找不到上月紀錄。"); return; }
       try {
         const parsed = JSON.parse(raw);
-        // 將上月資料載入為目前資料（提示使用者）
         if (!confirm("載入上月紀錄會覆蓋目前畫面資料，確定要載入？")) return;
         exerciseData = parsed.exercise || [];
         dietData = parsed.diet || [];
@@ -319,14 +395,13 @@
         renderExerciseTable();
         renderDietTable();
         updateChart();
-        document.getElementById("summaryNote").textContent = `已載入 ${key}（載入為目前資料，可再次按「儲存本月紀錄」另存）。`;
+        document.getElementById("summaryNote").textContent = `已載入 ${key}（載入為目前資料）。`;
       } catch (err) {
         alert("讀取上月資料發生錯誤。");
       }
     });
 
     document.getElementById("exportSummaryBtn").addEventListener("click", function(){
-      // 顯示簡短月度摘要（不下載檔案）
       const totalSessions = exerciseData.length;
       const totalTime = exerciseData.reduce((s,r)=>s + Number(r.time || 0), 0);
       const totalKcalEx = exerciseData.reduce((s,r)=>s + Number(r.kcal || 0), 0);
@@ -336,17 +411,17 @@
     });
 
     document.getElementById("clearAllBtn").addEventListener("click", function(){
-      if (!confirm("清除會移除本地所有健身資料，無法復原，確定要清除？")) return;
+      if (!confirm("清除會移除本地所有健身資料與預設活動，無法復原，確定要清除？")) return;
       localStorage.removeItem(STORAGE.exercise);
       localStorage.removeItem(STORAGE.diet);
-      // 移除所有 fitness_YYYY_M 月檔
+      localStorage.removeItem(STORAGE.presets);
       Object.keys(localStorage).forEach(k => { if (k.startsWith("fitness_")) localStorage.removeItem(k); });
-      exerciseData = []; dietData = [];
-      renderExerciseTable(); renderDietTable(); updateChart();
-      alert("已清除本地資料。");
+      exerciseData = []; dietData = []; activityPresets = DEFAULT_PRESETS.slice();
+      renderExerciseTable(); renderDietTable(); populateActivitySelects(); renderMetTable(); updateChart();
+      alert("已清除本地資料與恢復預設活動。");
     });
 
-    // ---------- 折線圖繪製 ----------
+    // ---------- 折線圖 ----------
     function getAllDates(exArr, diArr) {
       const set = new Set();
       exArr.forEach(e => set.add(normalizeDate(e.date)));
@@ -354,7 +429,6 @@
       const arr = Array.from(set).filter(x => x).sort();
       return arr;
     }
-
     function mapSumByDate(dates, arr, key) {
       const map = {};
       arr.forEach(item => {
@@ -363,7 +437,6 @@
       });
       return dates.map(dt => Math.round(map[dt] || 0));
     }
-
     function updateChart() {
       const dates = getAllDates(exerciseData, dietData);
       if (!dates.length) {
@@ -401,7 +474,6 @@
         }
       });
 
-      // 顯示簡短月度統計
       const totalSessions = exerciseData.length;
       const totalTime = exerciseData.reduce((s, r) => s + Number(r.time || 0), 0);
       const totalSets = exerciseData.reduce((s, r) => s + Number(r.sets || 0), 0);
@@ -427,16 +499,17 @@
       const today = new Date().toISOString().slice(0,10);
       if (!document.getElementById("exDate").value) document.getElementById("exDate").value = today;
       if (!document.getElementById("dietDate").value) document.getElementById("dietDate").value = today;
+
+      populateActivitySelects();
+      renderMetTable();
       renderExerciseTable();
       renderDietTable();
       updateChart();
-      // auto-calc example
       document.getElementById("calcBtn").click();
     }
 
-    // auto-save on unload
+    // 初始載入與自動儲存
     window.addEventListener("beforeunload", () => saveLocal());
-
     init();
   </script>
 </body>
