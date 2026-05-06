@@ -1,8 +1,9 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <title>自律健身計劃 — 自訂活動與 kcal 估算</title>
+  <title>自律健身計劃  </title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -34,7 +35,7 @@
 <body>
   <header>
     <h1>自律健身計劃</h1>
-    <div>加入自訂活動與 kcal 估算，支援儲存為預設活動</div>
+    <div>加入自訂活動與 kcal 估算，支援儲存為預設活動（預設體重 55 kg）</div>
   </header>
 
   <div class="container">
@@ -87,7 +88,7 @@
           <thead><tr><th>日期</th><th>活動</th><th>時間(分)</th><th>組數</th><th>估算消耗(kcal)</th><th>操作</th></tr></thead>
           <tbody></tbody>
         </table>
-        <div class="note">若未填體重，系統以 70 kg 為預設值估算消耗。</div>
+        <div class="note">若未填體重，系統以 55 kg 為預設值估算消耗。</div>
       </div>
 
       <div class="card">
@@ -125,11 +126,11 @@
 
     <div class="card">
       <h2>攝入 / 消耗熱量對照表與估算器</h2>
-      <div class="small">表列常見活動 MET 與 70 kg 範例每分鐘 kcal。可輸入體重與時間估算個人消耗。</div>
+      <div class="small">表列常見活動 MET 與 55 kg 範例每分鐘 kcal。可輸入體重與時間估算個人消耗。</div>
 
       <table class="table-inline" style="margin-top:12px;">
         <thead>
-          <tr><th>活動</th><th>典型 MET</th><th>每分鐘 kcal（70 kg 範例）</th></tr>
+          <tr><th>活動</th><th>典型 MET</th><th>每分鐘 kcal（55 kg 範例）</th></tr>
         </thead>
         <tbody id="metTableBody">
           <!-- 由 JS 填入 -->
@@ -137,7 +138,7 @@
       </table>
 
       <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <label>你的體重(kg): <input type="number" id="calcWeight" min="1" step="0.1" value="70" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></label>
+        <label>你的體重(kg): <input type="number" id="calcWeight" min="1" step="0.1" value="55" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></label>
         <label>選擇活動:
           <select id="calcActivity" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></select>
         </label>
@@ -151,14 +152,13 @@
 
   <script>
     // ---------- 常數與初始資料 ----------
-    const DEFAULT_WEIGHT = 70;
+    const DEFAULT_WEIGHT = 55; // 改為 55 kg
     const STORAGE = {
       exercise: "exerciseData_v2",
       diet: "dietData_v2",
       presets: "activityPresets_v1"
     };
 
-    // 內建活動與 MET
     const DEFAULT_PRESETS = [
       { name: "跑步（8 km/h）", met: 8.3 },
       { name: "快走（5.5 km/h）", met: 4.3 },
@@ -199,20 +199,20 @@
         sel.appendChild(opt);
 
         const opt2 = document.createElement("option");
-        opt2.value = idx;
+        opt2.value = p.met; // 使用 MET 值作為 calcActivity 的 value
         opt2.textContent = `${p.name} (MET ${p.met})`;
         calcSel.appendChild(opt2);
       });
     }
 
-    // MET 表格渲染
+    // MET 表格渲染（以 55 kg 為範例）
     function renderMetTable() {
       const tbody = document.getElementById("metTableBody");
       tbody.innerHTML = "";
       activityPresets.forEach(p => {
-        const kcalMin70 = (p.met * 70 / 60);
+        const kcalMin55 = (p.met * DEFAULT_WEIGHT / 60);
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${p.name}</td><td>${p.met}</td><td>約 ${kcalMin70.toFixed(1)} kcal/min</td>`;
+        tr.innerHTML = `<td>${p.name}</td><td>${p.met}</td><td>約 ${kcalMin55.toFixed(1)} kcal/min</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -495,7 +495,6 @@
 
     // ---------- 初始化 ----------
     function init() {
-      // set default dates to today
       const today = new Date().toISOString().slice(0,10);
       if (!document.getElementById("exDate").value) document.getElementById("exDate").value = today;
       if (!document.getElementById("dietDate").value) document.getElementById("dietDate").value = today;
@@ -506,9 +505,12 @@
       renderDietTable();
       updateChart();
       document.getElementById("calcBtn").click();
+
+      // 將 calcWeight 與 userWeight placeholder 設為預設 55
+      document.getElementById("calcWeight").value = DEFAULT_WEIGHT;
+      document.getElementById("userWeight").placeholder = `${DEFAULT_WEIGHT}`;
     }
 
-    // 初始載入與自動儲存
     window.addEventListener("beforeunload", () => saveLocal());
     init();
   </script>
