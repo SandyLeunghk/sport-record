@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <title>自律健身計劃  </title>
+  <title>自律健身計劃 — 自訂活動與 kcal 估算（預設體重 55kg）</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -35,7 +34,7 @@
 <body>
   <header>
     <h1>自律健身計劃</h1>
-    <div>加入自訂活動與 kcal 估算，支援儲存為預設活動（預設體重 55 kg）</div>
+    <div>加入自訂活動、kcal 估算與運動備註（預設體重 55 kg）</div>
   </header>
 
   <div class="container">
@@ -54,7 +53,7 @@
     <div class="grid">
 
       <div class="card">
-        <h2>運動數據記錄（含自訂活動）</h2>
+        <h2>運動數據記錄（含自訂活動與備註）</h2>
 
         <form id="exerciseForm">
           <label>日期: <input type="date" id="exDate" required></label>
@@ -73,6 +72,8 @@
 
           <label>體重(kg): <input type="number" id="userWeight" min="1" step="0.1" placeholder="選填，用於 kcal 估算"></label>
 
+          <label>備註: <input type="text" id="exNote" placeholder="例如：較輕/加重/感覺良好" style="padding:6px;border:1px solid #ddd;border-radius:6px;"></label>
+
           <button type="button" class="button" id="estimateBtn">估算 kcal</button>
           <div id="estimateDisplay" class="muted" style="align-self:center;">估算：— kcal</div>
 
@@ -85,7 +86,7 @@
         </div>
 
         <table id="exerciseTable" aria-label="運動紀錄表">
-          <thead><tr><th>日期</th><th>活動</th><th>時間(分)</th><th>組數</th><th>估算消耗(kcal)</th><th>操作</th></tr></thead>
+          <thead><tr><th>日期</th><th>活動</th><th>時間(分)</th><th>組數</th><th>估算消耗(kcal)</th><th>備註</th><th>操作</th></tr></thead>
           <tbody></tbody>
         </table>
         <div class="note">若未填體重，系統以 55 kg 為預設值估算消耗。</div>
@@ -132,9 +133,7 @@
         <thead>
           <tr><th>活動</th><th>典型 MET</th><th>每分鐘 kcal（55 kg 範例）</th></tr>
         </thead>
-        <tbody id="metTableBody">
-          <!-- 由 JS 填入 -->
-        </tbody>
+        <tbody id="metTableBody"></tbody>
       </table>
 
       <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -228,6 +227,7 @@
                         <td>${r.time}</td>
                         <td>${r.sets || 0}</td>
                         <td>${Math.round(r.kcal)}</td>
+                        <td>${r.note ? r.note : ""}</td>
                         <td><button class="delete-btn" data-type="exercise" data-index="${idx}">刪除</button></td>`;
         tbody.appendChild(tr);
       });
@@ -300,6 +300,7 @@
       const time = Number(document.getElementById("exTime").value) || 0;
       const sets = Number(document.getElementById("exSets").value) || 0;
       const weight = Number(document.getElementById("userWeight").value) || DEFAULT_WEIGHT;
+      const note = document.getElementById("exNote").value.trim();
 
       let met = null;
       let activityName = "";
@@ -318,7 +319,7 @@
       }
 
       const kcal = met ? (kcalPerMinuteFromMET(met, weight) * time) : 0;
-      exerciseData.push({ date: normalizeDate(date), activity: activityName, time, sets, kcal });
+      exerciseData.push({ date: normalizeDate(date), activity: activityName, time, sets, kcal, note });
       saveLocal();
       renderExerciseTable();
       updateChart();
@@ -506,7 +507,6 @@
       updateChart();
       document.getElementById("calcBtn").click();
 
-      // 將 calcWeight 與 userWeight placeholder 設為預設 55
       document.getElementById("calcWeight").value = DEFAULT_WEIGHT;
       document.getElementById("userWeight").placeholder = `${DEFAULT_WEIGHT}`;
     }
